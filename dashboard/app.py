@@ -60,14 +60,20 @@ def load_historical_data():
             
     # Fallback to CSV
     csv_path = os.path.join(os.path.dirname(__file__), '..', 'data', 'train.csv')
+    csv_path_fallback = os.path.join(os.path.dirname(__file__), '..', 'data', 'store1_2017.csv')
+    
     if os.path.exists(csv_path):
         df = pd.read_csv(csv_path)
-        df['date'] = pd.to_datetime(df['date'])
-        # Sample it for frontend performance if it's huge
-        if len(df) > 100000:
-            df = df[df['date'].dt.year == 2017]
-        return df
-    return pd.DataFrame()
+    elif os.path.exists(csv_path_fallback):
+        df = pd.read_csv(csv_path_fallback)
+    else:
+        return pd.DataFrame()
+        
+    df['date'] = pd.to_datetime(df['date'])
+    # Sample it for frontend performance if it's huge
+    if len(df) > 100000:
+        df = df[df['date'].dt.year == 2017]
+    return df
 
 @st.cache_data(ttl=60)
 def load_forecasts():
