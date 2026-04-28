@@ -1,8 +1,15 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-from pymongo import MongoClient
-from cassandra.cluster import Cluster
+try:
+    from pymongo import MongoClient
+except ImportError:
+    MongoClient = None
+
+try:
+    from cassandra.cluster import Cluster
+except ImportError:
+    Cluster = None
 import os
 
 # --- Configuration ---
@@ -20,15 +27,17 @@ def init_connections():
     mongo_db = None
     
     try:
-        cluster = Cluster([CASSANDRA_HOST])
-        cass_session = cluster.connect(CASSANDRA_KEYSPACE)
+        if Cluster:
+            cluster = Cluster([CASSANDRA_HOST])
+            cass_session = cluster.connect(CASSANDRA_KEYSPACE)
     except Exception:
         pass
         
     try:
-        client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=2000)
-        client.admin.command('ping')
-        mongo_db = client[MONGO_DB]
+        if MongoClient:
+            client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=2000)
+            client.admin.command('ping')
+            mongo_db = client[MONGO_DB]
     except Exception:
         pass
         
