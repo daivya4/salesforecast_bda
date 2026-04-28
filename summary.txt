@@ -1,0 +1,44 @@
+====================================================================
+PROJECT SUMMARY: Sales Forecasting and Demand Intelligence System
+====================================================================
+
+1. PROJECT OBJECTIVE
+--------------------
+To design and build an end-to-end Big Data Analytics pipeline that ingests historical retail sales data, mathematically forecasts future demand, and generates actionable intelligence (restock warnings and demand spike/drop alerts) using distributed machine learning.
+
+2. TECHNOLOGY STACK
+-------------------
+* Data Processing Engine: Apache Spark (PySpark)
+* Machine Learning: Spark MLlib (Random Forest Regressor), Scikit-Learn
+* Analytical Database: MongoDB (Stores forecasts and intelligence alerts)
+* Historical Database: Apache Cassandra (Designed for raw time-series sales)
+* Frontend Dashboard: Streamlit & Plotly (Interactive UI)
+* Data Source: Kaggle's "Store Sales - Time Series Forecasting" (Corporación Favorita dataset)
+
+3. SYSTEM ARCHITECTURE & COMPONENTS
+-----------------------------------
+A. Big Data Pipeline & Machine Learning (spark/forecasting_job.py)
+   - Reads massive historical retail datasets.
+   - Cleans and engineers features including `day_of_year`, `day_of_week`, `month`, and `onpromotion`.
+   - Utilizes a PySpark RandomForestRegressor (configured to handle 33 categorical product families) to predict the next 7 days of sales.
+   - Overcomes local Windows & Java 23 limitations by aggressively managing JVM arguments and security managers (`-Djava.security.manager=allow`, `--add-opens`).
+
+B. Demand Intelligence Logic
+   - The system computes a 7-day moving average as a baseline.
+   - Spark SQL compares the Random Forest predictions against this baseline and predefined stock thresholds.
+   - Generates three types of alerts:
+      * RESTOCK: If predicted demand > max stock capacity.
+      * SPIKE: If predicted demand is > 30% above the moving average.
+      * DROP: If predicted demand is < 30% below the moving average.
+
+C. Interactive Dashboard (dashboard/app.py)
+   - Fetches historical data (Cassandra/CSV fallback) and pre-computed predictions/alerts from MongoDB.
+   - Provides a dynamic Plotly line chart comparing historical trends with forecasted trajectories.
+   - Features a clean, collapsible "Recent Alerts" feed.
+   - Includes a dynamic "What-If" Interactive Predictor: Users can input custom dates and toggle promotion flags, immediately triggering a localized Scikit-Learn Random Forest model to instantly estimate sales.
+
+4. KEY OUTCOMES
+---------------
+- The Random Forest model accurately captures non-linear retail patterns, proving that weekday promotions (e.g., "Mega Tuesdays") can mathematically outperform standard weekend sales.
+- The dual-database architecture cleanly separates historical heavy-reads (Cassandra) from fast, indexed analytical outputs (MongoDB).
+- The system is resilient, utilizing seamless dummy-data fallbacks if external database connections drop, ensuring the frontend always renders.
