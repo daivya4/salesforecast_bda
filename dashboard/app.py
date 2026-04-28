@@ -166,7 +166,8 @@ with col_main:
     st.plotly_chart(fig, use_container_width=True)
 
 with col_sidebar:
-    with st.expander("🚨 Recent Alerts (Click to view)", expanded=False):
+    st.markdown("### 🚨 Recent Alerts")
+    with st.container(height=250):
         if not alerts_df.empty:
             for _, row in alerts_df.iterrows():
                 icon = "📦" if row['alert_type'] == 'RESTOCK' else "🔥" if row['alert_type'] == 'SPIKE' else "📉"
