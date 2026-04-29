@@ -59,8 +59,8 @@ def load_historical_data():
             st.warning(f"Failed to read from Cassandra: {e}")
             
     # Fallback to CSV
-    csv_path = os.path.join(os.path.dirname(__file__), '..', 'data', 'train.csv')
-    csv_path_fallback = os.path.join(os.path.dirname(__file__), '..', 'data', 'store1_2017.csv')
+    csv_path = os.path.join(os.path.dirname(__file__), '..', 'data', 'store_1_2_3_2017.csv')
+    csv_path_fallback = csv_path
     
     if os.path.exists(csv_path):
         df = pd.read_csv(csv_path)
