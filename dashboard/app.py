@@ -60,13 +60,15 @@ def load_historical_data():
             
     # Fallback to CSV
     csv_path = os.path.join(os.path.dirname(__file__), '..', 'data', 'store_1_2_3_2017.csv')
-    csv_path_fallback = csv_path
+    csv_path_fallback = os.path.join(os.path.dirname(__file__), '..', 'data', 'store1_2017.csv')
     
     if os.path.exists(csv_path):
         df = pd.read_csv(csv_path)
     elif os.path.exists(csv_path_fallback):
+        st.info("Using Store 1 fallback data.")
         df = pd.read_csv(csv_path_fallback)
     else:
+        st.error(f"Data file not found at {csv_path}. Please ensure you have pushed the CSV files to your repository.")
         return pd.DataFrame()
         
     df['date'] = pd.to_datetime(df['date'])

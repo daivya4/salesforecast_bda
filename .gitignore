@@ -1,4 +1,6 @@
 data/train.csv
-data/*.csv
+!data/store_1_2_3_2017.csv
+!data/store1_2017.csv
+!data/sample_sales.csv
 .DS_Store
 __pycache__/
