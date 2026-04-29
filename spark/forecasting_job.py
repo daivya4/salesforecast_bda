@@ -74,15 +74,16 @@ def main():
     spark = init_spark()
     
     # 1. Data Ingestion
-    print("Ingesting Kaggle Data...")
+    print(f"Ingesting Data from {DATA_PATH}...")
     df = spark.read.csv(DATA_PATH, header=True, inferSchema=True)
     df = df.withColumn("date", to_date(col("date")))
     
-    # Filter to last 2 months of 2017 for Stores 1, 2, and 3 to speed up local execution and prevent timeouts
-    print("Filtering data for local performance (July-Aug 2017, Stores 1-3)...")
+    # 2. Filtering & Cleaning
+    # Filter to last 2 months of 2017 for Stores 1, 2, and 3 to ensure fast local performance
+    print("Filtering data for Stores 1, 2, and 3 (July-Aug 2017)...")
     df = df.filter((col("date") >= "2017-07-01") & (col("store_nbr").isin(1, 2, 3)))
     
-    # 2. Data Cleaning & Feature Engineering
+    # 3. Data Cleaning & Feature Engineering
     print("Engineering Features...")
     df = df.withColumn("day_of_year", dayofyear(col("date"))) \
            .withColumn("day_of_week", dayofweek(col("date"))) \

@@ -16,7 +16,8 @@ This project is an end-to-end Big Data Analytics (BDA) application designed for 
     - family: The category/type of product (e.g., GROCERIES, DAIRY, MEATS).
     - sales: The target variable (total sales for that product family at that store).
     - onpromotion: A count of items in a product family that were on promotion.
-* Scope: For local performance and demonstration, the pipeline focuses on the first three stores (Stores 1, 2, and 3) and the year 2017 to ensure fast processing while maintaining statistical relevance.
+* Scope: The pipeline utilizes the full Kaggle dataset (train.csv) and is configured to analyze and forecast demand for the first three stores (Stores 1, 2, and 3). 
+* Data Volume: By processing the actual 120MB+ CSV, the system demonstrates the scalability of Apache Spark when handling millions of retail records.
 
 3. DATA PREPROCESSING & CLEANING
 --------------------------------

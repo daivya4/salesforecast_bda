@@ -70,8 +70,12 @@ def load_historical_data():
         return pd.DataFrame()
         
     df['date'] = pd.to_datetime(df['date'])
+    
+    # Filter to stores 1, 2, and 3 for the dashboard view
+    df = df[df['store_nbr'].isin([1, 2, 3])]
+
     # Sample it for frontend performance if it's huge
-    if len(df) > 100000:
+    if len(df) > 150000:
         df = df[df['date'].dt.year == 2017]
     return df
 
