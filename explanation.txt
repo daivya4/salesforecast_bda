@@ -1,0 +1,94 @@
+================================================================================
+PROJECT EXPLANATION: SALES FORECASTING AND DEMAND INTELLIGENCE SYSTEM
+================================================================================
+
+1. PROJECT OVERVIEW
+-------------------
+This project is an end-to-end Big Data Analytics (BDA) application designed for retail environments. It doesn't just predict future sales; it provides "Demand Intelligence" by translating those predictions into actionable business alerts (like when to restock or when a sudden surge in demand is occurring). It uses a hybrid architecture combining batch processing for long-term forecasts and streaming processing for real-time monitoring.
+
+2. THE DATASET
+--------------
+* Source: Kaggle's "Store Sales - Time Series Forecasting" (Corporación Favorita dataset).
+* Content: It contains historical sales data from a large Ecuadorian retailer.
+* Key Attributes:
+    - date: The timestamp of the sale.
+    - store_nbr: Unique identifier for each store.
+    - family: The category/type of product (e.g., GROCERIES, DAIRY, MEATS).
+    - sales: The target variable (total sales for that product family at that store).
+    - onpromotion: A count of items in a product family that were on promotion.
+* Scope: For local performance and demonstration, the pipeline focuses on the first three stores (Stores 1, 2, and 3) and the year 2017 to ensure fast processing while maintaining statistical relevance.
+
+3. DATA PREPROCESSING & CLEANING
+--------------------------------
+The preprocessing is handled using Apache Spark to demonstrate distributed data handling:
+* Date Conversion: Converting raw strings into proper Spark DateType objects for time-series arithmetic.
+* Filtering: Isolating specific stores (1-3) and time periods to manage computational resources.
+* Missing Value Handling: Removing rows with null values (using .na.drop()) to ensure model stability.
+* Categorical Encoding: Using StringIndexer to convert the 'family' text categories into numerical indices ('family_idx') so the Machine Learning model can process them.
+* Feature Scaling/Assembling: Using VectorAssembler to group all relevant numerical features into a single 'features' vector for the MLlib algorithm.
+
+4. FEATURE ENGINEERING
+----------------------
+To improve the model's accuracy, we extracted "hidden" information from the raw date:
+* day_of_week: Captures weekly patterns (e.g., people shop more on Saturdays).
+* day_of_year: Captures seasonal trends throughout the year.
+* month: Identifies monthly cycles.
+* 7-Day Moving Average: Calculated using Spark Window functions (Window.partitionBy("family", "store_nbr").orderBy("date")). This provides a "baseline" of recent performance to compare against future predictions.
+
+5. DATA SPLITTING & EVALUATION
+------------------------------
+For this forecasting task, the data is split chronologically:
+* Training Set: Historical data from Stores 1, 2, and 3 (July - August 2017) is used to teach the model the relationship between variables.
+* Forecast Set: A programmatically generated dataset representing the "Next 7 Days" after the last known date for all three stores. This is used to generate the final business predictions.
+* Evaluation: While this pipeline focuses on generating production forecasts, standard evaluation metrics like RMSE (Root Mean Squared Error) were used during the model selection phase to ensure Random Forest outperformed simpler models like Linear Regression.
+
+6. THE DATA PIPELINE (STEP-BY-STEP)
+-----------------------------------
+1. INGESTION: Spark reads raw CSV files (or queries Cassandra) into a DataFrame.
+2. TRANSFORMATION: Spark SQL and DataFrame API apply the cleaning and feature engineering steps.
+3. MODEL TRAINING: A Random Forest model is trained on the historical "features" to learn the relationship between dates/promotions and sales.
+4. FUTURE GENERATION: The system programmatically generates dates for the next 7 days.
+5. FORECASTING: The trained model predicts sales for these 7 future days across all product categories.
+6. INTELLIGENCE CALCULATION: A Spark SQL logic layer compares predictions against thresholds and the moving average.
+7. STORAGE: Results (Forecasts and Alerts) are pushed to MongoDB for the dashboard to access.
+
+7. PREDICTIVE MODELING
+----------------------
+* Algorithm: Random Forest Regressor (from PySpark MLlib).
+* Why Random Forest? Unlike simple Linear Regression, Random Forest can capture non-linear patterns (like sudden spikes during holiday months) and interactions between features (like how a "Promotion" on a "Tuesday" behaves differently than a "Promotion" on a "Sunday").
+* Configuration: 20 Decision Trees with a depth of 5, optimized for retail trend detection.
+* "What-If" Predictor: A secondary model (Scikit-Learn) is embedded in the Dashboard to allow users to manually simulate different promotion scenarios.
+
+8. DATA ANALYSIS & DEMAND INTELLIGENCE
+--------------------------------------
+The system performs automated analysis to generate three types of alerts:
+* RESTOCK: Triggered if predicted demand exceeds a high threshold (e.g., > 500 units), indicating potential stock-out.
+* SPIKE: Triggered if predicted sales are > 30% higher than the recent 7-day moving average.
+* DROP: Triggered if predicted sales are > 30% lower than the recent 7-day moving average (useful for reducing perishables orders).
+
+9. REAL-TIME PROCESSING (STREAMING)
+-----------------------------------
+We used Spark Structured Streaming to monitor "live" sales events:
+* Source: A TCP Socket (simulating a POS system).
+* Windowing: Sales are aggregated in 1-minute "sliding windows".
+* Logic: If sales for any product exceed 50 units within a single minute, a REALTIME_SPIKE alert is instantly pushed to the database.
+
+10. TOOLS & TECHNOLOGY STACK
+---------------------------
+* Apache Spark (PySpark): The backbone. Used for massive data transformation and distributed machine learning.
+* MongoDB: The "Analytical Store". Chosen because its JSON-like structure is perfect for storing diverse alerts and dashboard configurations.
+* Apache Cassandra: The "Historical Store". Used for high-speed writes and time-series data storage.
+* Streamlit: The "Frontend Framework". Used to build the interactive UI without needing complex HTML/CSS.
+* Plotly: The "Visualization Engine". Used to create the dynamic charts where users can zoom in on specific sales dates.
+* PySpark MLlib: For scalable, production-grade machine learning.
+
+11. DASHBOARD & VISUALIZATION
+-----------------------------
+The user interacts with a professional dashboard featuring:
+* Trend Comparison: A multi-line chart showing Historical Sales vs. Forecasted Sales.
+* Alert Feed: A live panel showing generated Restock and Spike warnings.
+* Interactive Forecasting: A "What-If" tool where managers can input a date and toggle the "On Promotion" switch to see an instant sales estimate.
+
+================================================================================
+FINISH
+================================================================================

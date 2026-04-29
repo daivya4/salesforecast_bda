@@ -92,9 +92,10 @@ def load_forecasts():
     today = datetime.date(2017, 8, 15)
     dates = [today + datetime.timedelta(days=i) for i in range(1, 8)]
     mock_f = []
-    for d in dates:
-        mock_f.append({'family': 'AUTOMOTIVE', 'store_nbr': 1, 'forecast_date': pd.to_datetime(d), 'predicted_sales': 5 + d.day%3})
-        mock_f.append({'family': 'GROCERY I', 'store_nbr': 1, 'forecast_date': pd.to_datetime(d), 'predicted_sales': 3000 - d.day%100})
+    for store_id in [1, 2, 3]:
+        for d in dates:
+            mock_f.append({'family': 'AUTOMOTIVE', 'store_nbr': store_id, 'forecast_date': pd.to_datetime(d), 'predicted_sales': 5 + d.day%3 + store_id})
+            mock_f.append({'family': 'GROCERY I', 'store_nbr': store_id, 'forecast_date': pd.to_datetime(d), 'predicted_sales': (3000 - d.day%100) * (1 + store_id/10)})
     return pd.DataFrame(mock_f)
 
 @st.cache_data(ttl=60)
@@ -112,7 +113,8 @@ def load_alerts():
     # Mock fallback alerts
     return pd.DataFrame([
         {'family': 'GROCERY I', 'store_nbr': 1, 'alert_date': pd.to_datetime('2017-08-16'), 'alert_type': 'RESTOCK', 'message': 'High demand predicted (3000). Check stock levels.'},
-        {'family': 'AUTOMOTIVE', 'store_nbr': 1, 'alert_date': pd.to_datetime('2017-08-17'), 'alert_type': 'SPIKE', 'message': 'Demand Spike: 35% increase expected.'}
+        {'family': 'AUTOMOTIVE', 'store_nbr': 2, 'alert_date': pd.to_datetime('2017-08-17'), 'alert_type': 'SPIKE', 'message': 'Demand Spike: 35% increase expected.'},
+        {'family': 'MEATS', 'store_nbr': 3, 'alert_date': pd.to_datetime('2017-08-18'), 'alert_type': 'DROP', 'message': 'Demand Drop: 20% decrease expected.'}
     ])
 
 

@@ -78,9 +78,9 @@ def main():
     df = spark.read.csv(DATA_PATH, header=True, inferSchema=True)
     df = df.withColumn("date", to_date(col("date")))
     
-    # Filter to last 2 months of 2017 for Store 1 to speed up local execution and prevent timeouts
-    print("Filtering data for local performance (July-Aug 2017, Store 1)...")
-    df = df.filter((col("date") >= "2017-07-01") & (col("store_nbr") == 1))
+    # Filter to last 2 months of 2017 for Stores 1, 2, and 3 to speed up local execution and prevent timeouts
+    print("Filtering data for local performance (July-Aug 2017, Stores 1-3)...")
+    df = df.filter((col("date") >= "2017-07-01") & (col("store_nbr").isin(1, 2, 3)))
     
     # 2. Data Cleaning & Feature Engineering
     print("Engineering Features...")
@@ -88,8 +88,8 @@ def main():
            .withColumn("day_of_week", dayofweek(col("date"))) \
            .withColumn("month", month(col("date")))
            
-    # Calculate 7-day moving average per product family
-    windowSpec = Window.partitionBy("family").orderBy("date").rowsBetween(-6, 0)
+    # Calculate 7-day moving average per product family per store
+    windowSpec = Window.partitionBy("family", "store_nbr").orderBy("date").rowsBetween(-6, 0)
     df = df.withColumn("moving_avg_7d", avg("sales").over(windowSpec))
     # Drop rows where moving average is null (start of window)
     df = df.na.drop()
@@ -120,10 +120,12 @@ def main():
     families_df = df.select("family").distinct().collect()
     
     future_data = []
-    for row in families_df:
-        for d in future_dates:
-            # We assume no promotion (0) for future dates as baseline
-            future_data.append((1, row['family'], d, d.timetuple().tm_yday, d.isoweekday(), d.month, 0))
+    stores = [1, 2, 3]
+    for store_id in stores:
+        for row in families_df:
+            for d in future_dates:
+                # We assume no promotion (0) for future dates as baseline
+                future_data.append((store_id, row['family'], d, d.timetuple().tm_yday, d.isoweekday(), d.month, 0))
             
     future_df = spark.createDataFrame(future_data, ["store_nbr", "family", "forecast_date", "day_of_year", "day_of_week", "month", "onpromotion"])
     
@@ -136,9 +138,9 @@ def main():
     # 4. Demand Intelligence Logic
     print("Calculating Demand Intelligence...")
     
-    latest_ma = df.groupBy("family").agg({"moving_avg_7d": "max"}).withColumnRenamed("max(moving_avg_7d)", "current_ma")
+    latest_ma = df.groupBy("family", "store_nbr").agg({"moving_avg_7d": "max"}).withColumnRenamed("max(moving_avg_7d)", "current_ma")
     
-    intel_df = predictions.join(latest_ma, ["family"])
+    intel_df = predictions.join(latest_ma, ["family", "store_nbr"])
     intel_df.createOrReplaceTempView("intelligence")
     
     # Thresholds adjusted for Kaggle data scales
